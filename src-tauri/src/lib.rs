@@ -18,8 +18,8 @@ struct SupabaseConfig {
 // This is the state we will manage
 struct AppState {
     supabase: SupabaseConfig,
-    auth_api_url: String,
-    neo4j_api_url: String,
+    mobile_auth_ip: String,
+    mobile_neo4j_api: String,
 }
 
 #[derive(Serialize)]
@@ -42,12 +42,12 @@ fn init_env() {
 }
 
 #[tauri::command]
-async fn fetch_projects(state: tauri::State<'_, AppState>) -> Result<String, String> {
+async fn fetch_graph(state: tauri::State<'_, AppState>) -> Result<String, String> {
     let client = reqwest::Client::new();
 
     // 2. Build the GET request manually
     let response = client
-        .get(format!("{}/graph", state.neo4j_api_url))
+        .get(format!("{}/graph", state.mobile_neo4j_api))
         .header("Content-Type", "application/json")
         // .body(json_body)
         .send()
@@ -70,7 +70,7 @@ async fn fetch_projects(state: tauri::State<'_, AppState>) -> Result<String, Str
 async fn get_projects(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
     let client = reqwest::Client::new();
     let res = client
-        .get(format!("{}/projects/", state.auth_api_url))
+        .get(format!("{}/projects/", state.mobile_auth_ip))
         .json(&serde_json::json!({"userID": 4}))
         .send()
         .await
@@ -83,7 +83,7 @@ async fn get_projects(state: tauri::State<'_, AppState>) -> Result<serde_json::V
 async fn delete_project(state: tauri::State<'_, AppState>, id: i32) -> Result<(), String> {
     let client = reqwest::Client::new();
     client
-        .delete(format!("{}/projects/delete", state.auth_api_url))
+        .delete(format!("{}/projects/delete", state.mobile_auth_ip))
         .json(&serde_json::json!({"projectID": id}))
         .send()
         .await
@@ -268,7 +268,7 @@ async fn signup(
 async fn logout(state: tauri::State<'_, AppState>) -> Result<(), String> {
     let client = reqwest::Client::new();
     client
-        .post(format!("{}/logout/", state.auth_api_url))
+        .post(format!("{}/logout/", state.mobile_auth_ip))
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -313,8 +313,8 @@ async fn enroll_mfa(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     init_env();
-    let auth_api_url = env::var("AUTH_API_URL").unwrap();
-    let neo4j_api_url = env::var("NEO4J_API_URL").unwrap();
+    let mobile_auth_ip = env::var("mobile_auth_ip").unwrap();
+    let mobile_neo4j_api = env::var("mobile_neo4j_api").unwrap();
     let supabase_url = env::var("PUBLIC_SUPABASE_URL").unwrap();
     let supabase_key = env::var("SUPABASE_SERVICE_ROLE_KEY").unwrap();
     tauri::Builder::default()
@@ -325,8 +325,8 @@ pub fn run() {
                 url: supabase_url.to_string(),
                 anon_key: supabase_key.to_string(),
             },
-            auth_api_url,
-            neo4j_api_url,
+            mobile_auth_ip,
+            mobile_neo4j_api,
         })
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
@@ -356,7 +356,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         // .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
-            fetch_projects,
+            fetch_graph,
             get_projects,
             delete_project,
             login,

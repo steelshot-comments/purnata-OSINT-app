@@ -3,7 +3,11 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": ["DOM", "ESNext", "DOM.Iterable"],
+    "lib": [
+      "DOM",
+      "ESNext",
+      "DOM.Iterable"
+    ],
     "skipDefaultLibCheck": true,
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true,
@@ -17,17 +21,25 @@
     // "strict": true,
     "baseUrl": ".",
     "paths": {
-      "$lib": ["src/lib"],
-      "$lib/*": ["src/lib/*"]
+      "$lib": [
+        "src/lib"
+      ],
+      "$lib/*": [
+        "src/lib/*"
+      ]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "noEmit": true,
     "moduleDetection": "force"
-  }
-  // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
-  // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
+  },
+  "include": [
+      "src/**/*.ts",
+      "src/**/*.svelte",
+      "vite.config.ts",
+      "playwright.config.ts"
+    ],
   //
   // If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
   // from the referenced tsconfig.json - TypeScript does not merge them in

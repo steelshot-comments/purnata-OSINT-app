@@ -1,41 +1,117 @@
 <script lang="ts">
-    import { Focus, Search, CirclePlus, Table as TableIcon, RotateCcw, SquareDashedMousePointer, Plus, X } from 'lucide-svelte';
-    import { goto } from '$app/navigation';
+    import { Toolbar } from "@svar-ui/svelte-toolbar";
+    import { WillowDark } from "@svar-ui/svelte-core";
+    import { 
+        Focus, Search, Table as TableIcon, 
+        RotateCcw, SquareDashedMousePointer, 
+        Plus, X, CirclePlus 
+    } from 'lucide-svelte';
 
-    // Define the interface for the actions
-    let { 
-        onToggleView, 
-        onReset,
-        onAddNode,
-        onFit, 
-        onSearch 
-    } = $props<{
-        onToggleView?: () => void;
-        onReset?: () => void;
-        onAddNode?: () => void;
-        onFit?: () => void;
-        onSearch?: () => void;
+    let { onToggleView, onReset, onAddNode, onFit, onSearch } = $props<{
+        onToggleView: () => void;
+        onReset: () => void;
+        onAddNode: () => void;
+        onFit: () => void;
+        onSearch: () => void;
     }>();
+
+    // Casting to 'any' here is the "escape hatch" to allow Lucide components
+    // without triggering the 'string is not assignable to IToolbarItem' error.
+    const items: any[] = [
+        { 
+            id: "search", 
+            comp: Search, 
+            handler: onSearch,
+            css: "icon-btn" 
+        },
+        { comp: "separator" },
+        { 
+            id: "toggleView", 
+            comp: TableIcon, 
+            handler: onToggleView,
+            css: "icon-btn"
+        },
+        { 
+            id: "fit", 
+            comp: Focus, 
+            handler: onFit,
+            css: "icon-btn"
+        },
+        { 
+            id: "reset", 
+            comp: RotateCcw, 
+            handler: onReset,
+            css: "icon-btn"
+        },
+        { comp: "spacer" }, 
+        { 
+            id: "addNode", 
+            comp: "button", 
+            text: "Add Node", 
+            // We use 'css' to inject the Plus icon via a background or pseudo-element 
+            // if SVAR types won't let us pass the Lucide component to the 'icon' field.
+            css: "add-node-btn",
+            handler: onAddNode
+        },
+        { 
+            id: "circlePlus", 
+            comp: CirclePlus,
+            css: "icon-btn"
+        },
+        { comp: "separator" },
+        { 
+            id: "close", 
+            comp: X, 
+            handler: () => history.back(),
+            css: "icon-btn close-btn" 
+        },
+    ];
 </script>
 
-<div class="flex items-center gap-2">   
-    <button onclick={onSearch} title="Search"><Search size={20}/></button>
-    <button onclick={onToggleView} title="Toggle Table/Graph"><TableIcon size={20}/></button>
-    <button onclick={onFit} title="Fit Graph"><Focus size={20}/></button>
-    <button onclick={() => {}} title="Select"><SquareDashedMousePointer size={20}/></button>
-    <button onclick={onReset} title="Reload Data"><RotateCcw size={20}/></button>
-    <button onclick={onAddNode} title="Add Node">
-        add node
-        <!-- <Plus size={20}/> -->
-    </button>
-    <button onclick={() => {}} title="Circle Plus"><CirclePlus size={20}/></button>
-    <button onclick={() => history.back()} title="Close"><X size={20}/></button>
-</div>
+<WillowDark>
+    <div class="svar-toolbar-wrapper">
+        <Toolbar {items} overflow="menu" />
+    </div>
+</WillowDark>
 
-<!-- <style lang="postcss">
-    @layer base{
-        button {
-            @apply p-2 hover:bg-white/10 rounded-lg transition-colors text-white;
-        }
+<style>
+    :global(.svar-toolbar) {
+        background-color: #12181b !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        height: 50px !important;
+        padding: 0 8px !important;
     }
-</style> -->
+
+    /* Style for items where Lucide is the component */
+    :global(.icon-btn) {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #94a3b8;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    :global(.icon-btn:hover) {
+        color: #f1f5f9;
+        background: rgba(255,255,255,0.08);
+    }
+
+    /* Customizing the SVAR built-in button */
+    :global(.add-node-btn) {
+        background-color: rgba(20, 184, 166, 0.2) !important;
+        color: #2dd4bf !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(20, 184, 166, 0.3) !important;
+        margin-left: 8px !important;
+    }
+
+    :global(.close-btn:hover) {
+        color: #f87171 !important;
+        background: rgba(248, 113, 113, 0.1) !important;
+    }
+</style>

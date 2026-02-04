@@ -28,78 +28,80 @@
      * Handles Initial Login or Signup
      */
     async function handleSubmit() {
-    loading = true;
-    try {
-      if (isLogin) {
-        const result: any = await invoke("login", { email, password });
-        if (result.mfa_required) {
-          mfaTicket = result.ticket;
-          step = "challenge"; // Existing user MFA
-        } else {
-          sessionToken = result.access_token;
-          step = "setup"; // New user force setup
-        }
-      } else {
-        await invoke("signup", { email, password, displayName: display_name });
-        alert("Check email to confirm!");
-        // isLogin = true;
-      }
-    } catch (e) { alert(e); } finally { loading = false; }
+        await goto('/home/projects');
+    // loading = true;
+    // try {
+    //   if (isLogin) {
+    //     const result: any = await invoke("login", { email, password });
+    //     if (result.mfa_required) {
+    //       mfaTicket = result.ticket;
+    //       step = "challenge"; // Existing user MFA
+    //     } else {
+    //       sessionToken = result.access_token;
+    //       step = "setup"; // New user force setup
+    //     }
+    //   } else {
+    //     await invoke("signup", { email, password, displayName: display_name });
+    //     alert("Check email to confirm!");
+    //     // isLogin = true;
+    //   }
+    // } catch (e) { alert(e); } finally { loading = false; }
   }
 
     /**
      * Step 1 of Setup: Request QR Code from Supabase
      */
-    async function startSetup() {
-        loading = true;
-        try {
-            const data: any = await invoke("enroll_mfa", { sessionToken });
-            qrSvg = data.totp.qr_code;
-            secretCode = data.totp.secret;
-            factorId = data.id;
-            step = "setup";
-        } catch (e) {
-            alert("Enrollment failed: " + e);
-            // Fallback: let them in anyway if setup fails
-            await goto("/home/projects");
-        } finally {
-            loading = false;
-        }
-    }
+    // async function startSetup() {
+    //     loading = true;
+    //     try {
+    //         const data: any = await invoke("enroll_mfa", { sessionToken });
+    //         qrSvg = data.totp.qr_code;
+    //         secretCode = data.totp.secret;
+    //         factorId = data.id;
+    //         step = "setup";
+    //     } catch (e) {
+    //         alert("Enrollment failed: " + e);
+    //         // Fallback: let them in anyway if setup fails
+    //         await goto("/home/projects");
+    //     } finally {
+    //         loading = false;
+    //     }
+    // }
 
-    /**
-     * Step 2 of Setup: Verify the first code to activate MFA
-     */
-    async function confirmSetup() {
-        loading = true;
-        try {
-            await invoke("verify_factor", { factorId, code: setupCode, sessionToken });
-            alert("MFA successfully enabled!");
-            await goto("/home/projects");
-        } catch (e) {
-            alert("Verification failed: " + e);
-        } finally {
-            loading = false;
-        }
-    }
+    // /**
+    //  * Step 2 of Setup: Verify the first code to activate MFA
+    //  */
+    // async function confirmSetup() {
+    //     loading = true;
+    //     try {
+    //         await invoke("verify_factor", { factorId, code: setupCode, sessionToken });
+    //         alert("MFA successfully enabled!");
+    //         await goto("/home/projects");
+    //     } catch (e) {
+    //         alert("Verification failed: " + e);
+    //     } finally {
+    //         loading = false;
+    //     }
+    // }
 
-    /**
-     * Verification for returning users (MFA Challenge)
-     */
-    async function verifyOtp() {
-        loading = true;
-        try {
-            await invoke("verify_totp", { code: otpCode, ticket: mfaTicket });
-            await goto("/home/projects");
-        } catch (e) {
-            alert("Invalid OTP code. Please try again.");
-        } finally {
-            loading = false;
-        }
-    }
+    // /**
+    //  * Verification for returning users (MFA Challenge)
+    //  */
+    // async function verifyOtp() {
+    //     loading = true;
+    //     try {
+    //         await invoke("verify_totp", { code: otpCode, ticket: mfaTicket });
+    //         await goto("/home/projects");
+    //     } catch (e) {
+    //         alert("Invalid OTP code. Please try again.");
+    //     } finally {
+    //         loading = false;
+    //     }
+    // }
 </script>
 
 <div class="min-h-screen w-full bg-[#1a2332] flex flex-col items-center justify-center p-6">
+    <a href="/home/projects">Home</a>
   <div class="w-full max-w-sm z-10 flex flex-col gap-6" in:fade>
     
     {#if step === "auth"}
