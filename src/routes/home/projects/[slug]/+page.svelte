@@ -39,7 +39,8 @@
   async function fetchGraphData() {
     try {
       isLoading = true;
-      const data: string = await invoke("fetch_projects");
+      const data: string = await invoke("fetch_graph");
+      console.log(data);
       const graphData = JSON.parse(data);
 
       const newElements = { nodes: [], edges: [] };
@@ -178,10 +179,10 @@
   });
 
   onMount(async () => {
-    if (graphState.needsRefresh) {
+    // if (graphState.needsRefresh) {
       await fetchGraphData();
       graphState.needsRefresh = false;
-    }
+    // }
   });
 
   onDestroy(() => {

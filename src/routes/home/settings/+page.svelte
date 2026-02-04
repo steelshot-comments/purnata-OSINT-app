@@ -25,7 +25,7 @@
 	<header class="h-16 flex items-center justify-between px-6 border-b border-white/10 shrink-0 bg-[#1a2332]">
 		<h1 class="text-xl font-semibold">Welcome Yeshaya!</h1>
 		<button 
-			onclick={() => goto('/account')}
+			onclick={() => goto('/home/account')}
 			class="p-2 hover:bg-white/10 rounded-full transition-colors"
 		>
 			<User size={24} />
@@ -44,7 +44,7 @@
 					<select 
 						bind:value={themeProvider.mode}
                         onchange={(e)=>{themeProvider.setTheme(e.currentTarget.value as any)}}
-						class="rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-teal-500"
+						class="bg-slate-700 rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-teal-500"
 					>
 						{#each themeOptions as option}
 							<option value={option}>{option}</option>
