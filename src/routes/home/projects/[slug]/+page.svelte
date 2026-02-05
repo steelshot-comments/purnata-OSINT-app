@@ -36,6 +36,10 @@
     goto("/home/projects/addNode");
   }
 
+  function onSearch(){
+    return;
+  }
+
   async function fetchGraphData() {
     try {
       isLoading = true;
@@ -74,6 +78,7 @@
       });
 
       elements = newElements;
+      console.log("hellooooo" + elements);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -201,6 +206,7 @@
       Back
     </button>
     <Toolbar
+      {onSearch}
       onToggleView={toggleView}
       onReset={resetGraph}
       onFit={fitGraph}
@@ -226,7 +232,7 @@
       <div bind:this={container} class="w-full h-full cy-container"></div>
     {/if}
     {#if viewMode === "table"}
-      <Table data={elements} />
+      <Table bind:data={elements} />
     {/if}
   </div>
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Trash2, Tag, Pen, Check, X, Plus } from "lucide-svelte";
+    import { Trash2, Tag, Pen, Check, X } from "lucide-svelte";
     import { slide } from "svelte/transition";
 
     let { node, onRemove, onUpdate, canRemove = true, startInEdit = false } = $props<{

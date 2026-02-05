@@ -3,8 +3,7 @@
     import { WillowDark } from "@svar-ui/svelte-core";
     import { 
         Focus, Search, Table as TableIcon, 
-        RotateCcw, SquareDashedMousePointer, 
-        Plus, X, CirclePlus 
+        RotateCcw, SquareDashedMousePointer, X, CirclePlus 
     } from 'lucide-svelte';
 
     let { onToggleView, onReset, onAddNode, onFit, onSearch } = $props<{
@@ -46,7 +45,7 @@
         { comp: "spacer" }, 
         { 
             id: "addNode", 
-            comp: "button", 
+            comp: CirclePlus, 
             text: "Add Node", 
             // We use 'css' to inject the Plus icon via a background or pseudo-element 
             // if SVAR types won't let us pass the Lucide component to the 'icon' field.
