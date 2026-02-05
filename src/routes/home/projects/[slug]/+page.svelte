@@ -236,37 +236,3 @@
     {/if}
   </div>
 </div>
-
-<style>
-  /* Add this to your <style> block */
-  .cy-container :global(div) {
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .cy-container :global(div[style]) {
-    left: 0 !important;
-    top: 0 !important;
-    transform: none !important;
-  }
-
-  .cy-container * {
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .cy-container :global(canvas) {
-    /* Force the canvases to be visible and correctly positioned */
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    z-index: 10 !important;
-    display: block !important;
-  }
-
-  .cy-container {
-    /* Ensure the container itself is a "stacking context" */
-    position: relative !important;
-    background-color: transparent !important; /* Let the nodes show through */
-    overflow: visible !important;
-  }
-</style>
