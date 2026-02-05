@@ -1,7 +1,9 @@
 <script lang="ts">
     import { ChevronDown, Database, GitBranch, Search, Info } from 'lucide-svelte';
-  let { data } = $props<{ data: { nodes: any[], edges: any[] } }>();
-  
+  let { data = $bindable() } = $props<{ data: { nodes: any[], edges: any[] } }>();
+
+  console.log(data);
+
   // State to track which sections are open
   let openSections = $state({ nodes: true, edges: false });
 

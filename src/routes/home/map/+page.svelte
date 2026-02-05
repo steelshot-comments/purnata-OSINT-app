@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import maplibregl from "maplibre-gl";
   import "maplibre-gl/dist/maplibre-gl.css";
-  import { Plus, X, MapPin, Info, Layers } from "lucide-svelte";
+  import { Plus, MapPin, Info, Layers } from "lucide-svelte";
   import { fade, slide } from "svelte/transition";
 
   // Svelte 5 State
