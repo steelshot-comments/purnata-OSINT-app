@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { ArrowLeft, Plus } from "lucide-svelte";
-  import { graphState } from "$lib/graph.svelte";
+  import { graphState } from "$lib/graph/graph.svelte";
   import NodeCard from "$lib/components/NodeCard.svelte";
   import { fade } from "svelte/transition";
 

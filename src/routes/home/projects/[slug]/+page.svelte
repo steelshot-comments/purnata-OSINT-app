@@ -6,7 +6,7 @@
   import type { Core } from "cytoscape";
   import Table from "$lib/components/Table.svelte";
   import { goto } from "$app/navigation";
-  import { graphState } from "$lib/graph.svelte";
+  import { graphState, createCy } from "$lib/graph/graph.svelte";
 
   // Svelte 5 Runes
   let isLoading = $state(true);
@@ -36,7 +36,7 @@
     goto("/home/projects/addNode");
   }
 
-  function onSearch(){
+  function onSearch() {
     return;
   }
 
@@ -78,7 +78,6 @@
       });
 
       elements = newElements;
-      console.log("hellooooo" + elements);
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -98,37 +97,7 @@
         await tick();
         if (!container || cy) return;
         console.log("Initializing Cytoscape with elements:", elements);
-        console.log(
-          "Container dimensions:",
-          container?.clientWidth,
-          container?.clientHeight,
-        );
-        console.log("Container element:", container);
-        cy = cytoscape({
-          container: container,
-          elements: $state.snapshot(elements),
-          style: [
-            {
-              selector: "node",
-              style: {
-                "background-color": "#2dd4bf",
-                label: "data(label)",
-                color: "#fff",
-                "text-valign": "center",
-                "font-size": "10px",
-              },
-            },
-            {
-              selector: "edge",
-              style: {
-                "curve-style": "bezier",
-                "target-arrow-shape": "triangle",
-                "line-color": "#555",
-              },
-            },
-          ],
-          layout: { name: "grid" },
-        });
+        cy = createCy(container, elements);
 
         (window as any).cy = cy;
 
@@ -162,9 +131,9 @@
           position: { x: 750, y: 200 }, // Middle of your 1536 container
         });
 
-        cy.on("render", () => {
-          console.log("Cytoscape just rendered a frame!");
-        });
+        // cy.on("render", () => {
+        //   console.log("Cytoscape just rendered a frame!");
+        // });
 
         cy.ready(() => {
           cy?.fit();
@@ -185,8 +154,8 @@
 
   onMount(async () => {
     // if (graphState.needsRefresh) {
-      await fetchGraphData();
-      graphState.needsRefresh = false;
+    await fetchGraphData();
+    graphState.needsRefresh = false;
     // }
   });
 
@@ -228,11 +197,18 @@
       </div>
     {/if}
 
-    {#if viewMode === "graph"}
-      <div bind:this={container} class="w-full h-full cy-container"></div>
-    {/if}
+    <div
+      bind:this={container}
+      id="container"
+      class="w-full h-full block relative"
+      class:none={viewMode == "graph"}
+    ></div>
     {#if viewMode === "table"}
       <Table bind:data={elements} />
     {/if}
   </div>
 </div>
+
+<style>
+
+</style>

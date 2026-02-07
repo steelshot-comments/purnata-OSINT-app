@@ -12,7 +12,7 @@ pub struct Project {
 pub async fn get_projects(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
     let res = reqwest::Client::new()
         .get(format!("{}/projects/", state.mobile_auth_ip))
-        .json(&serde_json::json!({"userID": 4})) // Note: Hardcoded ID 4 from original
+        .json(&serde_json::json!({"userID": 4}))
         .send()
         .await
         .map_err(|e| e.to_string())?;
