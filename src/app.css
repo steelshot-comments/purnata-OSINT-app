@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+
 @layer base {
 
-    :root{
+    * {
+        filter: none !important;
+        backdrop-filter: none !important;
+        transform: none !important;
+    }
+
+
+    :root {
         --nav-bg: black;
         --bg: black;
     }
@@ -15,26 +23,19 @@
     h1 {
         @apply text-4xl;
     }
-
-    canvas {
-        position: relative !important;
-        image-rendering: pixelated;
-        -webkit-backface-visibility: visible;
-        backface-visibility: visible;
-    }
-
+    
     button {
         cursor: pointer;
     }
 }
 
-@layer utilities{
+@layer utilities {
 
-    .floating{
+    .floating {
         @apply absolute z-10 bottom-20 right-5;
     }
 
-    .floating-button{
+    .floating-button {
         @apply w-14 h-14 rounded-full bg-teal-600 text-3xl cursor-pointer text-white shadow-lg shadow-zinc-400 grid place-items-center;
     }
 }
