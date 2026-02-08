@@ -1,12 +1,15 @@
 use dotenvy::dotenv;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use std::env;
-use tauri::Listener;
+use tauri::{Listener, Builder};
 use tauri_plugin_deep_link::DeepLinkExt;
-use uuid::{self, Uuid};
+// use uuid;
+mod commands;
 use commands::{auth, neo4j, projects};
 
-mod commands;
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+use tauri_plugin_global_shortcut;
+
 
 struct SupabaseConfig {
     url: String,
@@ -20,12 +23,12 @@ struct AppState {
     mobile_neo4j_api: String,
 }
 
-#[derive(Serialize)]
-struct RequestBody {
-    user_id: Uuid,
-    project_id: Uuid,
-    graph_id: Uuid,
-}
+// #[derive(Serialize)]
+// struct RequestBody {
+//     user_id: Uuid,
+//     project_id: Uuid,
+//     graph_id: Uuid,
+// }
 
 fn init_env() {
     dotenv().ok();
@@ -38,8 +41,18 @@ pub fn run() {
     let mobile_neo4j_api = env::var("mobile_neo4j_api").unwrap();
     let supabase_url = env::var("PUBLIC_SUPABASE_URL").unwrap();
     let supabase_key = env::var("SUPABASE_SERVICE_ROLE_KEY").unwrap();
-    tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+
+    let mut builder = Builder::default();
+
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+    {
+        builder = builder.plugin(
+            tauri_plugin_global_shortcut::Builder::new().build()
+        );
+    }
+
+
+    builder
         .plugin(tauri_plugin_stronghold::Builder::new(|pass| todo!()).build())
         .manage(AppState {
             supabase: SupabaseConfig {

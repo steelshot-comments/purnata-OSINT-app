@@ -204,11 +204,10 @@
       class:none={viewMode == "graph"}
     ></div>
     {#if viewMode === "table"}
-      <Table bind:data={elements} />
+      <Table bind:data={elements} />  
     {/if}
   </div>
 </div>
 
 <style>
-
 </style>

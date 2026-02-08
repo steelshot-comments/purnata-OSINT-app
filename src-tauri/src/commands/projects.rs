@@ -1,12 +1,12 @@
 use crate::AppState;
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Project {
-    pub id: i32,
-    pub user_id: i32,
-}
+// #[derive(Deserialize, Serialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct Project {
+//     pub id: i32,
+//     pub user_id: i32,
+// }
 
 #[tauri::command]
 pub async fn get_projects(state: tauri::State<'_, AppState>) -> Result<serde_json::Value, String> {
