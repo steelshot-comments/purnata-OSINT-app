@@ -2,15 +2,32 @@
   import { invoke } from "@tauri-apps/api/core";
   import Toolbar from "$lib/components/Toolbar.svelte";
   import { onMount, onDestroy, tick } from "svelte";
-  import cytoscape from "cytoscape";
   import type { Core } from "cytoscape";
   import Table from "$lib/components/Table.svelte";
   import { goto } from "$app/navigation";
   import { graphState, createCy } from "$lib/graph/graph.svelte";
+  import NodeDetails from "$lib/components/NodeDetails.svelte";
 
   // Svelte 5 Runes
   let isLoading = $state(true);
   let viewMode = $state<"graph" | "table">("graph");
+  let selectedNodeData = $state<any>(null);
+
+  async function deleteNode(data: any) {
+    const confirmDelete = confirm(`Delete ${data.label}?`);
+    if (!confirmDelete) return;
+
+    try {
+      await invoke("delete_node_from_graph", {
+        idValue: selectedNodeData.id, // Ensure this matches your Rust param name
+      });
+      selectedNodeData = null;
+      await fetchGraphData(); // Refresh your main elements
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   let elements = $state<{ nodes: any[]; edges: any[] }>({
     nodes: [],
     edges: [],
@@ -18,11 +35,20 @@
   let container = $state<HTMLDivElement | null>(null);
   let cy: Core | null = null;
 
-  function toggleView() {
-    viewMode = viewMode === "graph" ? "table" : "graph";
+  function updateSelectedNode(data: any) {
+    selectedNodeData = data;
   }
 
-  // 2. Logic for Graph Operations
+  function closeInspector() {
+    selectedNodeData = null;
+    cy?.$(":selected").unselect();
+  }
+
+  function toggleView() {
+    viewMode = viewMode === "graph" ? "table" : "graph";
+    if (viewMode === "table") closeInspector();
+  }
+
   function resetGraph() {
     fetchGraphData();
   }
@@ -44,12 +70,10 @@
     try {
       isLoading = true;
       const data: string = await invoke("fetch_graph");
-      console.log(data);
       const graphData = JSON.parse(data);
 
       const newElements = { nodes: [], edges: [] };
 
-      // Transform Nodes
       graphData.nodes.forEach((node: any) => {
         newElements.nodes.push({
           group: "nodes",
@@ -62,7 +86,6 @@
         });
       });
 
-      // Transform Edges
       graphData.edges.forEach((edge: any) => {
         newElements.edges.push({
           group: "edges",
@@ -79,73 +102,32 @@
 
       elements = newElements;
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error fetching graph:", error);
     } finally {
       isLoading = false;
     }
   }
 
-  // Svelte 5 Effect: Runs when 'elements' or 'container' changes
   $effect(() => {
     if (!container || cy) return;
-    if (
-      (elements.nodes.length > 0 || elements.edges.length > 0) &&
-      container &&
-      !cy
-    ) {
+    if ((elements.nodes.length > 0 || elements.edges.length > 0) && container) {
       const setup = async () => {
         await tick();
-        if (!container || cy) return;
-        console.log("Initializing Cytoscape with elements:", elements);
-        cy = createCy(container, elements);
+        cy = createCy(container!, elements);
 
-        (window as any).cy = cy;
-
-        cy.on("tap", "node", function (evt) {
-          const node = evt.target;
-          console.log("Tapped node:", node.data());
-          alert(
-            `Node: ${node.data().label}\nProperties: ${JSON.stringify(
-              node.data().properties,
-              null,
-              2,
-            )}`,
-          );
+        cy.on("tap", "node", (evt) => {
+          updateSelectedNode(evt.target.data());
         });
 
-        cy.on("tap", "edge", function (evt) {
-          const edge = evt.target;
-          console.log("Tapped edge:", edge.data());
-          alert(
-            `Edge: ${edge.data().label}\nSource: ${edge.data().source}\nTarget: ${edge.data().target}\nProperties: ${JSON.stringify(
-              edge.data().properties,
-              null,
-              2,
-            )}`,
-          );
-        });
-
-        cy.add({
-          group: "nodes",
-          data: { id: "manual_test", label: "TEST NODE" },
-          position: { x: 750, y: 200 }, // Middle of your 1536 container
-        });
-
-        // cy.on("render", () => {
-        //   console.log("Cytoscape just rendered a frame!");
-        // });
-
-        cy.ready(() => {
-          cy?.fit();
-          cy?.center();
+        // Clear selection when tapping background
+        cy.on("tap", (evt) => {
+          if (evt.target === cy) closeInspector();
         });
       };
-
       setup();
     }
     return () => {
       if (cy) {
-        console.log("Destroying CY instance");
         cy.destroy();
         cy = null;
       }
@@ -153,10 +135,8 @@
   });
 
   onMount(async () => {
-    // if (graphState.needsRefresh) {
     await fetchGraphData();
     graphState.needsRefresh = false;
-    // }
   });
 
   onDestroy(() => {
@@ -164,9 +144,11 @@
   });
 </script>
 
-<div class="w-screen h-screen relative flex flex-col">
+<div
+  class="w-screen h-screen relative flex flex-col bg-[#0f171a] overflow-hidden"
+>
   <div
-    class="h-16 bg-[#1a2a26] flex items-center px-4 gap-4 border-b border-white/10 shrink-0"
+    class="h-16 bg-[#1a2a26] flex items-center px-4 gap-4 border-b border-white/10 shrink-0 z-30"
   >
     <button
       onclick={() => history.back()}
@@ -183,10 +165,23 @@
     />
   </div>
 
-  <div class="relative grow overflow-hidden w-full h-full">
+  <div class="relative grow w-full h-full flex overflow-hidden">
+    <div
+      bind:this={container}
+      class="w-full h-full bg-[#0c1113] transition-opacity duration-300"
+      class:hidden={viewMode !== "graph"}
+      class:opacity-50={isLoading}
+    ></div>
+
+    {#if viewMode === "table"}
+      <div class="absolute inset-0 z-10 bg-[#0f171a]">
+        <Table bind:data={elements} />
+      </div>
+    {/if}
+
     {#if isLoading}
       <div
-        class="absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm"
+        class="absolute inset-0 z-50 flex flex-col items-center justify-center backdrop-blur-sm bg-black/20"
       >
         <div
           class="w-12 h-12 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"
@@ -197,17 +192,29 @@
       </div>
     {/if}
 
-    <div
-      bind:this={container}
-      id="container"
-      class="w-full h-full block relative"
-      class:none={viewMode == "graph"}
-    ></div>
-    {#if viewMode === "table"}
-      <Table bind:data={elements} />  
+    {#if selectedNodeData && viewMode === "graph"}
+      <NodeDetails
+        nodeData={selectedNodeData}
+        onClose={() => (selectedNodeData = null)}
+        onDelete={deleteNode}
+      />
     {/if}
   </div>
 </div>
 
 <style>
+  :global(.hidden) {
+    display: none !important;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
 </style>

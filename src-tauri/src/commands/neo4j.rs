@@ -61,23 +61,15 @@ pub async fn add_node_to_graph(
 #[tauri::command]
 pub async fn delete_node_from_graph(
     state: tauri::State<'_, AppState>,
-    label: String,
-    id_property: String,
-    id_value: String,
+    id_value: String, // FastAPI expects node_id here
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
 
-    let cloned_id = id_value.clone();
-
-    let payload = DeletePayload {
-        label,
-        id_property,
-        id_value: cloned_id,
-    };
+    // Construct the URL with the ID in the path
+    let url = format!("{}/delete-node/{}", state.mobile_neo4j_api, id_value);
 
     let response = client
-        .delete(format!("{}/graph/node", state.mobile_neo4j_api))
-        .json(&payload)
+        .delete(url)
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
@@ -85,6 +77,8 @@ pub async fn delete_node_from_graph(
     if response.status().is_success() {
         Ok(format!("Node {} successfully deleted", id_value))
     } else {
-        Err(format!("Delete failed with status: {}", response.status()))
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".into());
+        Err(format!("Delete failed ({}): {}", status, error_text))
     }
 }
