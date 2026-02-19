@@ -5,8 +5,9 @@
   import type { Core } from "cytoscape";
   import Table from "$lib/components/Table.svelte";
   import { goto } from "$app/navigation";
-  import { graphState, createCy } from "$lib/graph/graph.svelte";
+  import { graph, createCy } from "$lib/graph/graph.svelte";
   import NodeDetails from "$lib/components/NodeDetails.svelte";
+  import TransformButton from "$lib/components/TransformButton.svelte";
 
   // Svelte 5 Runes
   let isLoading = $state(true);
@@ -19,10 +20,10 @@
 
     try {
       await invoke("delete_node_from_graph", {
-        idValue: selectedNodeData.id, // Ensure this matches your Rust param name
+        idValue: selectedNodeData.id,
       });
       selectedNodeData = null;
-      await fetchGraphData(); // Refresh your main elements
+      await fetchGraphData();
     } catch (e) {
       console.error(e);
     }
@@ -109,34 +110,31 @@
   }
 
   $effect(() => {
-    if (!container || cy) return;
-    if ((elements.nodes.length > 0 || elements.edges.length > 0) && container) {
-      const setup = async () => {
-        await tick();
-        cy = createCy(container!, elements);
-
-        cy.on("tap", "node", (evt) => {
-          updateSelectedNode(evt.target.data());
-        });
-
-        // Clear selection when tapping background
-        cy.on("tap", (evt) => {
-          if (evt.target === cy) closeInspector();
-        });
-      };
-      setup();
+    if (!container) return;
+    
+    // Cleanup old instance
+    if (cy) {
+      cy.destroy();
+      cy = null;
     }
-    return () => {
-      if (cy) {
-        cy.destroy();
-        cy = null;
-      }
-    };
+
+    if (graph.elements.nodes.length > 0) {
+      tick().then(() => {
+        cy = createCy(container!, graph.elements);
+        
+        cy.on("tap", "node", (evt) => {
+          graph.selectNode(evt.target.data());
+        });
+
+        cy.on("tap", (evt) => {
+          if (evt.target === cy) graph.clearSelection();
+        });
+      });
+    }
   });
 
   onMount(async () => {
-    await fetchGraphData();
-    graphState.needsRefresh = false;
+    graph.loadData();
   });
 
   onDestroy(() => {
@@ -166,6 +164,10 @@
   </div>
 
   <div class="relative grow w-full h-full flex overflow-hidden">
+    <aside>
+      
+    </aside>
+    
     <div
       bind:this={container}
       class="w-full h-full bg-[#0c1113] transition-opacity duration-300"
@@ -192,13 +194,7 @@
       </div>
     {/if}
 
-    {#if selectedNodeData && viewMode === "graph"}
-      <NodeDetails
-        nodeData={selectedNodeData}
-        onClose={() => (selectedNodeData = null)}
-        onDelete={deleteNode}
-      />
-    {/if}
+    <NodeDetails />
   </div>
 </div>
 
@@ -218,3 +214,6 @@
     border-radius: 10px;
   }
 </style>
+
+
+      <!-- <p class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-tighter">UID: {nodeData.id}</p> -->

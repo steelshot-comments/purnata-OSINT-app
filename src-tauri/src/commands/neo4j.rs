@@ -61,11 +61,10 @@ pub async fn add_node_to_graph(
 #[tauri::command]
 pub async fn delete_node_from_graph(
     state: tauri::State<'_, AppState>,
-    id_value: String, // FastAPI expects node_id here
+    id_value: String,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
 
-    // Construct the URL with the ID in the path
     let url = format!("{}/delete-node/{}", state.mobile_neo4j_api, id_value);
 
     let response = client
@@ -81,4 +80,15 @@ pub async fn delete_node_from_graph(
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".into());
         Err(format!("Delete failed ({}): {}", status, error_text))
     }
+}
+
+#[tauri::command]
+pub async fn clone_node(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
+    reqwest::Client::new()
+        .put(format!("{}/clone-node", state.mobile_neo4j_api))
+        .json(&serde_json::json!({ "id": id }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
