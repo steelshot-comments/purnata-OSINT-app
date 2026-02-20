@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { Loader2, Play } from "lucide-svelte";
+  const WS_BASE_URL = import.meta.env.VITE_OSINT_WS_URL;
 
   let { text, source, query, nodeID } = $props<{
     text: string;
@@ -27,8 +28,7 @@
       });
 
       // 2. Connect to WebSocket
-      // Note: Use your environment variable for the URL
-      const wsUrl = `ws://your-production-url/ws/transforms/${nodeID}`;
+      const wsUrl = `${WS_BASE_URL}/ws/transforms/${nodeID}`;
       socket = new WebSocket(wsUrl);
 
       socket.onmessage = (event) => {
