@@ -49,7 +49,7 @@
   }
 </script>
 
-<div class="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/10 group">
+<div class="flex flex-col items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/10 group">
   <button 
     onclick={startTransform}
     disabled={isLoading}

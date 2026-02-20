@@ -50,7 +50,7 @@
           <p class="text-[10px] text-slate-500 font-bold uppercase mb-3">Available Transforms</p>
           <div class="grid gap-2">
             {#each actions as action}
-              <TransformButton 
+              <TransformButton
                 text={action.label} 
                 source={action.tool} 
                 nodeID={graph.selectedNode.id}

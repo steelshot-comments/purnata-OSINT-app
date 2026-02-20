@@ -40,7 +40,7 @@ pub fn run() {
     init_env();
     let mobile_auth_ip = env::var("AUTH_API_URL").unwrap();
     let mobile_neo4j_api = env::var("NEO4J_API_URL").unwrap();
-    let osint_api_url = env::var("NEO4J_API_URL").unwrap();
+    let osint_api_url = env::var("OSINT_API_URL").unwrap();
     let supabase_url = env::var("PUBLIC_SUPABASE_URL").unwrap();
     let supabase_key = env::var("SUPABASE_SERVICE_ROLE_KEY").unwrap();
 

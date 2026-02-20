@@ -18,8 +18,9 @@ pub async fn run_transform(
 
 #[tauri::command]
 pub async fn get_action_map(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let url = format!("{}/action-map", state.osint_api_url);
     let response = reqwest::Client::new()
-        .get(format!("{}/action-map", state.osint_api_url))
+        .get(url)
         .send()
         .await
         .map_err(|e| e.to_string())?;

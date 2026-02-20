@@ -40,9 +40,9 @@ class GraphState {
   elements = $derived({
     nodes: this.nodes.map(n => ({
       group: "nodes",
-      data: { 
-        id: n.id, 
-        label: n.properties.name || n.labels[0] || n.id, 
+      data: {
+        id: n.id,
+        label: n.properties.name || n.labels[0] || n.id,
         properties: n.properties,
         primaryLabel: n.labels[0] // Crucial for ActionMap lookup
       },
@@ -50,11 +50,11 @@ class GraphState {
     })),
     edges: this.edges.map(e => ({
       group: "edges",
-      data: { 
-        id: e.id, 
-        source: e.source, 
-        target: e.target, 
-        label: e.rel_type, 
+      data: {
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        label: e.rel_type,
         properties: e.properties
       },
       classes: e.rel_type
@@ -64,15 +64,20 @@ class GraphState {
   async loadData() {
     this.isLoading = true;
     try {
-      // 1. Fetch Graph
+      // 1. Fetch Graph Data
       const rawGraph: string = await invoke("fetch_graph");
       const graphData = JSON.parse(rawGraph);
       this.nodes = graphData.nodes;
       this.edges = graphData.edges;
-      
-      // 2. Fetch Action Map
+
+      // 2. Fetch Action Map (Unwrap the .message property)
       const rawActions: string = await invoke("get_action_map");
-      this.actionMap = JSON.parse(rawActions);
+      const actionResponse = JSON.parse(rawActions);
+
+      // This is the fix: assign the inner 'message' object to actionMap
+      this.actionMap = actionResponse.message || {};
+
+      console.log("Action Map loaded:", this.actionMap);
     } catch (e) {
       console.error("Failed to load graph data:", e);
     } finally {
