@@ -5,9 +5,8 @@
   import type { Core } from "cytoscape";
   import Table from "$lib/components/Table.svelte";
   import { goto } from "$app/navigation";
-  import { graph, createCy } from "$lib/graph/graph.svelte";
+  import { graph, createCy, setSelectionMode } from "$lib/graph/graph.svelte";
   import NodeDetails from "$lib/components/NodeDetails.svelte";
-  import TransformButton from "$lib/components/TransformButton.svelte";
 
   // Svelte 5 Runes
   let isLoading = $state(true);
@@ -34,6 +33,7 @@
     edges: [],
   });
   let container = $state<HTMLDivElement | null>(null);
+  let isSelectMode = $state(false);
   let cy: Core | null = null;
 
   function updateSelectedNode(data: any) {
@@ -109,9 +109,22 @@
     }
   }
 
+  function toggleSelectMode() {
+    isSelectMode = !isSelectMode;
+    setSelectionMode(cy, isSelectMode);
+  }
+
+  // To get the list of currently selected nodes
+  function getSelectedNodes() {
+    if (!cy) return [];
+    const selected = cy.$(":selected").map((ele) => ele.data());
+    console.log("Currently selected:", selected);
+    return selected;
+  }
+
   $effect(() => {
     if (!container) return;
-    
+
     // Cleanup old instance
     if (cy) {
       cy.destroy();
@@ -121,7 +134,7 @@
     if (graph.elements.nodes.length > 0) {
       tick().then(() => {
         cy = createCy(container!, graph.elements);
-        
+
         cy.on("tap", "node", (evt) => {
           graph.selectNode(evt.target.data());
         });
@@ -156,18 +169,18 @@
     </button>
     <Toolbar
       {onSearch}
+      {isSelectMode}
       onToggleView={toggleView}
       onReset={resetGraph}
       onFit={fitGraph}
       onAddNode={addNode}
+      onToggleSelect={toggleSelectMode}
     />
   </div>
 
   <div class="relative grow w-full h-full flex overflow-hidden">
-    <aside>
-      
-    </aside>
-    
+    <aside></aside>
+
     <div
       bind:this={container}
       class="w-full h-full bg-[#0c1113] transition-opacity duration-300"
@@ -198,6 +211,8 @@
   </div>
 </div>
 
+<!-- <p class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-tighter">UID: {nodeData.id}</p> -->
+
 <style>
   :global(.hidden) {
     display: none !important;
@@ -214,6 +229,3 @@
     border-radius: 10px;
   }
 </style>
-
-
-      <!-- <p class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-tighter">UID: {nodeData.id}</p> -->

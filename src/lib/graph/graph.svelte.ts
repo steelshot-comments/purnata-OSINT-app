@@ -4,6 +4,7 @@ import cytoscape, { type Core } from "cytoscape";
 export function createCy(container: HTMLElement, elements: any): Core {
   return cytoscape({
     container,
+    boxSelectionEnabled: true,
     elements,
     style: [
       {
@@ -17,6 +18,14 @@ export function createCy(container: HTMLElement, elements: any): Core {
         },
       },
       {
+        selector: "node:selected",
+        style: {
+          "border-width": "4px",
+          "border-color": "#fbbf24", // Yellow glow for selection
+          "background-color": "#14b8a6"
+        }
+      },
+      {
         selector: "edge",
         style: {
           "curve-style": "bezier",
@@ -24,9 +33,32 @@ export function createCy(container: HTMLElement, elements: any): Core {
           "line-color": "#555",
         },
       },
+      {
+        selector: "edge:selected",
+        style: {
+          "line-color": "#fbbf24",
+          "width": 2
+        }
+      }
     ],
     layout: { name: "grid" },
   });
+}
+
+export function setSelectionMode(cy: Core | null, isSelectMode: boolean) {
+  if (!cy) return;
+
+  if (isSelectMode) {
+    // 1. Disable panning so dragging creates a selection box
+    cy.userPanningEnabled(false); 
+    cy.boxSelectionEnabled(true);
+    // Optionally change cursor
+    cy.container()!.style.cursor = 'crosshair';
+  } else {
+    // 2. Re-enable panning for normal navigation
+    cy.userPanningEnabled(true);
+    cy.container()!.style.cursor = 'default';
+  }
 }
 
 class GraphState {

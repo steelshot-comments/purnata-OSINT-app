@@ -6,17 +6,19 @@
         RotateCcw, SquareDashedMousePointer, X, CirclePlus 
     } from 'lucide-svelte';
 
-    let { onToggleView, onReset, onAddNode, onFit, onSearch } = $props<{
+    let { onToggleView, onReset, onAddNode, onFit, onSearch, onToggleSelect, isSelectMode } = $props<{
         onToggleView: () => void;
         onReset: () => void;
         onAddNode: () => void;
         onFit: () => void;
         onSearch: () => void;
+        onToggleSelect: () => void;
+        isSelectMode: boolean;
     }>();
 
     // Casting to 'any' here is the "escape hatch" to allow Lucide components
     // without triggering the 'string is not assignable to IToolbarItem' error.
-    const items: any[] = [
+    const items: any[] = $derived([
         { 
             id: "search", 
             comp: Search, 
@@ -29,6 +31,13 @@
             comp: TableIcon, 
             handler: onToggleView,
             css: "icon-btn"
+        },
+        { 
+            id: "selectMode", 
+            comp: SquareDashedMousePointer, 
+            handler: onToggleSelect,
+            // Dynamically apply a 'selected' class when mode is active
+            css: `icon-btn ${isSelectMode ? 'select-mode-active' : ''}`
         },
         { 
             id: "fit", 
@@ -64,7 +73,7 @@
             handler: () => history.back(),
             css: "icon-btn close-btn" 
         },
-    ];
+    ]);
 </script>
 
 <WillowDark>
@@ -97,6 +106,12 @@
     :global(.icon-btn:hover) {
         color: #f1f5f9;
         background: rgba(255,255,255,0.08);
+    }
+
+    :global(.select-mode-active) {
+        color: #fbbf24 !important; /* Amber/Yellow icon */
+        background: rgba(251, 191, 36, 0.15) !important;
+        border: 1px solid rgba(251, 191, 36, 0.3);
     }
 
     /* Customizing the SVAR built-in button */

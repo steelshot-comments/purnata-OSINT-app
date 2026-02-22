@@ -1,10 +1,21 @@
 use crate::Serialize;
+use uuid::{uuid, Uuid};
 
 use crate::AppState;
 use std::collections::HashMap;
 
 #[derive(Serialize)]
+struct BasePayload {
+    user_id: Uuid,
+    graph_id: Uuid,
+    project_id: Uuid,
+}
+
+#[derive(Serialize)]
 struct NodePayload {
+    #[serde(flatten)]
+    pub base: BasePayload,
+
     label: String,
     properties: HashMap<String, String>,
 }
@@ -18,8 +29,15 @@ struct DeletePayload {
 
 #[tauri::command]
 pub async fn fetch_graph(state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let payload = BasePayload {
+        user_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+        graph_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+        project_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+    };
+
     let response = reqwest::Client::new()
         .get(format!("{}/graph", state.mobile_neo4j_api))
+        .json(&payload)
         .header("Content-Type", "application/json")
         .send()
         .await
@@ -29,19 +47,32 @@ pub async fn fetch_graph(state: tauri::State<'_, AppState>) -> Result<String, St
         return Err(format!("API error: {}", response.status()));
     }
 
-    response.text().await.map_err(|e| format!("Failed to read body: {}", e))
+    response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read body: {}", e))
 }
 
 #[tauri::command]
 pub async fn add_node_to_graph(
-    state: tauri::State<'_, AppState>, 
-    label: String, 
-    properties: HashMap<String, String>
+    state: tauri::State<'_, AppState>,
+    label: String,
+    properties: HashMap<String, String>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
-    
+
+    let base = BasePayload {
+        user_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+        graph_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+        project_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
+    };
+
     // We wrap the data in a payload struct for clean serialization
-    let payload = NodePayload { label, properties };
+    let payload = NodePayload {
+        label,
+        properties,
+        base,
+    };
 
     let response = client
         .post(format!("{}/graph/node", state.mobile_neo4j_api))
@@ -53,7 +84,10 @@ pub async fn add_node_to_graph(
     if response.status().is_success() {
         Ok("Node successfully created in Neo4j".into())
     } else {
-        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".into());
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".into());
         Err(format!("Failed to create node: {}", error_text))
     }
 }
@@ -77,7 +111,10 @@ pub async fn delete_node_from_graph(
         Ok(format!("Node {} successfully deleted", id_value))
     } else {
         let status = response.status();
-        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".into());
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".into());
         Err(format!("Delete failed ({}): {}", status, error_text))
     }
 }
