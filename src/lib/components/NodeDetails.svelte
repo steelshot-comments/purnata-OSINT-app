@@ -1,6 +1,6 @@
 <script lang="ts">
   import { graph } from "$lib/graph/graph.svelte";
-  import TransformButton from "./TransformButton.svelte";
+  import TransformButton from "$lib/components/TransformButton.svelte";
   import { fly } from "svelte/transition";
   import { X, Database, Trash2, Edit, Copy } from "lucide-svelte";
   import { invoke } from "@tauri-apps/api/core";
