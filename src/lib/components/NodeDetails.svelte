@@ -3,18 +3,13 @@
   import TransformButton from "./TransformButton.svelte";
   import { fly } from "svelte/transition";
   import { X, Database, Trash2, Edit, Copy } from "lucide-svelte";
+  import { invoke } from "@tauri-apps/api/core";
 
   // Derive actions automatically whenever selectedNode changes
   let actions = $derived(
     graph.selectedNode ? graph.getActionsForNode(graph.selectedNode.primaryLabel) : []
   );
 
-  async function handleDelete() {
-    if (!confirm("Delete this node?")) return;
-    // Call your Rust command
-    graph.clearSelection();
-    await graph.loadData();
-  }
 </script>
 
 {#if graph.selectedNode}
@@ -60,23 +55,6 @@
           </div>
         </section>
       {/if}
-    </div>
-
-    <div class="p-4 bg-black/40 border-t border-white/5 space-y-2">
-      <div class="flex gap-2">
-        <button class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded text-xs flex items-center justify-center gap-2">
-          <Edit size={14} /> Edit
-        </button>
-        <button class="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded text-xs flex items-center justify-center gap-2">
-          <Copy size={14} /> Clone
-        </button>
-      </div>
-      <button 
-        onclick={handleDelete}
-        class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded text-xs font-bold flex items-center justify-center gap-2"
-      >
-        <Trash2 size={14} /> Delete Node
-      </button>
     </div>
   </aside>
 {/if}

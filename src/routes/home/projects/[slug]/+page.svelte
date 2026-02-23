@@ -11,22 +11,25 @@
   // Svelte 5 Runes
   let isLoading = $state(true);
   let viewMode = $state<"graph" | "table">("graph");
-  let selectedNodeData = $state<any>(null);
+  let selectedNode = $state<any>(null);
 
-  async function deleteNode(data: any) {
-    const confirmDelete = confirm(`Delete ${data.label}?`);
+  async function handleDelete(data: any) {
+    // 1. Safety check: if data is null, just exit
+    if (!data) return;
+
+    const confirmDelete = confirm(`Delete ${data.label || 'this node'}?`);
     if (!confirmDelete) return;
 
     try {
       await invoke("delete_node_from_graph", {
-        idValue: selectedNodeData.id,
+        idValue: data.id, // Use the passed data id
       });
-      selectedNodeData = null;
+      selectedNode = null;
       await fetchGraphData();
     } catch (e) {
       console.error(e);
     }
-  }
+}
 
   let elements = $state<{ nodes: any[]; edges: any[] }>({
     nodes: [],
@@ -37,11 +40,11 @@
   let cy: Core | null = null;
 
   function updateSelectedNode(data: any) {
-    selectedNodeData = data;
+    selectedNode = data;
   }
 
   function closeInspector() {
-    selectedNodeData = null;
+    selectedNode = null;
     cy?.$(":selected").unselect();
   }
 
@@ -62,6 +65,18 @@
   function addNode() {
     goto("/home/projects/addNode");
   }
+
+  function changeLayout(name: string) {
+    if (!cy) return;
+    
+    // Define the layout configuration
+    const layout = cy.layout({
+        name: name,
+
+    });
+
+    layout.run();
+}
 
   function onSearch() {
     return;
@@ -159,22 +174,19 @@
   class="w-screen h-screen relative flex flex-col bg-[#0f171a] overflow-hidden"
 >
   <div
-    class="h-16 bg-[#1a2a26] flex items-center px-4 gap-4 border-b border-white/10 shrink-0 z-30"
+    class="h-16 bg-[#1a2a26] border-b border-white/10 shrink-0 z-30"
   >
-    <button
-      onclick={() => history.back()}
-      class="px-4 py-2 bg-white/10 text-white hover:bg-white/20 rounded-lg text-sm transition-colors"
-    >
-      Back
-    </button>
     <Toolbar
       {onSearch}
       {isSelectMode}
+      {selectedNode}
       onToggleView={toggleView}
       onReset={resetGraph}
       onFit={fitGraph}
       onAddNode={addNode}
       onToggleSelect={toggleSelectMode}
+      onChangeLayout={changeLayout}
+      onDelete={() => handleDelete(selectedNode)}
     />
   </div>
 
@@ -211,7 +223,6 @@
   </div>
 </div>
 
-<!-- <p class="text-[10px] font-mono text-slate-500 mt-1 uppercase tracking-tighter">UID: {nodeData.id}</p> -->
 
 <style>
   :global(.hidden) {
