@@ -1,12 +1,15 @@
 use dotenvy::dotenv;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use std::env;
-use tauri::Listener;
+use tauri::{Listener, Builder};
 use tauri_plugin_deep_link::DeepLinkExt;
-use uuid::{self, Uuid};
-use commands::{auth, neo4j, projects};
-
+// use uuid;
 mod commands;
+use commands::{auth, neo4j, projects, osint};
+
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+use tauri_plugin_global_shortcut;
+
 
 struct SupabaseConfig {
     url: String,
@@ -18,14 +21,15 @@ struct AppState {
     supabase: SupabaseConfig,
     mobile_auth_ip: String,
     mobile_neo4j_api: String,
+    osint_api_url: String,
 }
 
-#[derive(Serialize)]
-struct RequestBody {
-    user_id: Uuid,
-    project_id: Uuid,
-    graph_id: Uuid,
-}
+// #[derive(Serialize)]
+// struct RequestBody {
+//     user_id: Uuid,
+//     project_id: Uuid,
+//     graph_id: Uuid,
+// }
 
 fn init_env() {
     dotenv().ok();
@@ -34,12 +38,23 @@ fn init_env() {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     init_env();
-    let mobile_auth_ip = env::var("mobile_auth_ip").unwrap();
-    let mobile_neo4j_api = env::var("mobile_neo4j_api").unwrap();
+    let mobile_auth_ip = env::var("AUTH_API_URL").unwrap();
+    let mobile_neo4j_api = env::var("NEO4J_API_URL").unwrap();
+    let osint_api_url = env::var("OSINT_API_URL").unwrap();
     let supabase_url = env::var("PUBLIC_SUPABASE_URL").unwrap();
     let supabase_key = env::var("SUPABASE_SERVICE_ROLE_KEY").unwrap();
-    tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+
+    let mut builder = Builder::default();
+
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+    {
+        builder = builder.plugin(
+            tauri_plugin_global_shortcut::Builder::new().build()
+        );
+    }
+
+
+    builder
         .plugin(tauri_plugin_stronghold::Builder::new(|pass| todo!()).build())
         .manage(AppState {
             supabase: SupabaseConfig {
@@ -48,6 +63,7 @@ pub fn run() {
             },
             mobile_auth_ip,
             mobile_neo4j_api,
+            osint_api_url
         })
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
@@ -87,7 +103,10 @@ pub fn run() {
             projects::delete_project,
             neo4j::fetch_graph,
             neo4j::add_node_to_graph,
-            neo4j::delete_node_from_graph
+            neo4j::delete_node_from_graph,
+            neo4j::clone_node,
+            osint::run_transform,
+            osint::get_action_map
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
