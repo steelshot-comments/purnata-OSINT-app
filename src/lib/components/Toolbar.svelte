@@ -1,6 +1,17 @@
 <script lang="ts">
   import { Toolbar } from "@svar-ui/svelte-toolbar";
-  import { WillowDark } from "@svar-ui/svelte-core";
+  import { WillowDark, RadioButtonGroup, RadioButton } from "@svar-ui/svelte-core";
+
+  const layouts = [
+    { id: "grid", label: "Grid" },
+    { id: "cose", label: "Force Directed" },
+    { id: "circle", label: "Circle" },
+    { id: "concentric", label: "Concentric" },
+    { id: "random", label: "Random" },
+  ];
+
+  let selectedLayout = $state("grid");
+  
   import {
     Focus,
     Search,
@@ -16,7 +27,11 @@
     Orbit,
     Pencil,
     CirclePile,
-    Shuffle
+    Shuffle,
+    ZoomIn,
+    ZoomOut
+
+
   } from "lucide-svelte";
 
   let {
@@ -30,6 +45,8 @@
     selectedNode,
     onDelete,
     onChangeLayout,
+    zoomIn,
+    zoomOut,
   } = $props<{
     onToggleView: () => void;
     onReset: () => void;
@@ -41,6 +58,8 @@
     selectedNode: any;
     onDelete: () => void;
     onChangeLayout: (name: string) => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
   }>();
 
   const items: any[] = $derived([
@@ -67,8 +86,20 @@
       id: "selectMode",
       comp: SquareDashedMousePointer,
       handler: onToggleSelect,
-      // Dynamically apply a 'selected' class when mode is active
       css: `icon-btn ${isSelectMode ? "select-mode-active" : ""}`,
+    },
+    {comp: "separator"},
+    {
+      id: "zoom-in",
+      comp: ZoomIn,
+      handler: zoomIn,
+      css: "icon-btn",
+    },
+    {
+      id: "zoom-out",
+      comp: ZoomOut,
+      handler: zoomOut,
+      css: "icon-btn",
     },
     {
       id: "fit",
@@ -76,6 +107,7 @@
       handler: onFit,
       css: "icon-btn",
     },
+    {comp: "separator"},
     {
       id: "reset",
       comp: RotateCcw,
@@ -84,46 +116,60 @@
     },
     { comp: "separator" },
     {
-      id: "layout-grid",
-      comp: LayoutGrid,
-      handler: () => onChangeLayout("grid"),
-      css: "icon-btn",
-      tooltip: "Grid Layout"
+      id: "layout",
+      comp: RadioButtonGroup,
+      css: "flex items-center gap-2",
+      tooltip: "Layout Options",
+      props: {
+        value: selectedLayout,
+        options: layouts,
+        onChange: (val: string) => {
+          selectedLayout = val;
+          onChangeLayout(val);
+        },
+      },
     },
-    {
-      id: "layout-cose",
-      comp: Network,
-      handler: () => onChangeLayout("cose"),
-      css: "icon-btn",
-      tooltip: "Force Directed"
-    },
-    {
-      id: "layout-circle",
-      comp: Orbit,
-      handler: () => onChangeLayout("circle"),
-      css: "icon-btn",
-      tooltip: "Circle Layout"
-    },
-    {
-      id: "layout-concentric",
-      comp: CirclePile,
-      handler: () => onChangeLayout("concentric"),
-      css: "icon-btn",
-      tooltip: "Concentric Layout"
-    },
-    {
-      id: "layout-random",
-      comp: Shuffle,
-      handler: () => onChangeLayout("random"),
-      css: "icon-btn",
-      tooltip: "Random Layout"
-    },
+    // {
+    //   id: "layout-grid",
+    //   comp: LayoutGrid,
+    //   handler: () => onChangeLayout("grid"),
+    //   css: "icon-btn",
+    //   tooltip: "Grid Layout"
+    // },
+    // {
+    //   id: "layout-cose",
+    //   comp: Network,
+    //   handler: () => onChangeLayout("cose"),
+    //   css: "icon-btn",
+    //   tooltip: "Force Directed"
+    // },
+    // {
+    //   id: "layout-circle",
+    //   comp: Orbit,
+    //   handler: () => onChangeLayout("circle"),
+    //   css: "icon-btn",
+    //   tooltip: "Circle Layout"
+    // },
+    // {
+    //   id: "layout-concentric",
+    //   comp: CirclePile,
+    //   handler: () => onChangeLayout("concentric"),
+    //   css: "icon-btn",
+    //   tooltip: "Concentric Layout"
+    // },
+    // {
+    //   id: "layout-random",
+    //   comp: Shuffle,
+    //   handler: () => onChangeLayout("random"),
+    //   css: "icon-btn",
+    //   tooltip: "Random Layout"
+    // },
     { comp: "separator" },
     {
       id: "addNode",
       comp: CirclePlus,
       text: "Add Node",
-      css: "add-node-btn",
+      css: "icon-btn add-node-btn",
       handler: onAddNode,
     },
     {
@@ -134,18 +180,18 @@
     {
       id: "edit",
       comp: Pencil,
-      css: "icon-btn",
+      css: `icon-btn ${!selectedNode ? 'opacity-30 pointer-events-none' : ''}`,
     },
     {
       id: "duplicate",
       comp: CopyPlus,
-      css: "icon-btn",
+      css: `icon-btn ${!selectedNode ? 'opacity-30 pointer-events-none' : ''}`,
     },
     {
       id: "delete",
       comp: Trash2,
       handler: onDelete,
-      css: `icon-btn delete-btn ${!selectedNode ? 'opacity-30 pointer-events-none cursor-not-allowed' : ''}`,
+      css: `icon-btn delete-btn ${!selectedNode ? 'opacity-30 pointer-events-none' : ''}`,
     },
   ]);
 </script>
@@ -184,45 +230,42 @@
     border: 1px solid rgba(251, 191, 36, 0.3);
   }
 
-  /* Customizing the SVAR built-in button */
-  :global(.add-node-btn) {
-    background-color: rgba(20, 184, 166, 0.2) !important;
+  :global(.add-node-btn):hover {
+    background-color: rgba(20, 184, 166, 0.3) !important;
     color: #2dd4bf !important;
-    font-weight: 600 !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(20, 184, 166, 0.3) !important;
-    margin-left: 8px !important;
+    border: 1px solid rgba(20, 184, 166, 0.4) !important;
   }
 
-  .delete-btn {
-    /* Layout & Sizing */
-    display: flex;
-    width: 100%;
-    padding-top: 0.5rem; /* py-2 */
-    padding-bottom: 0.5rem;
+  :global(.delete-btn) {
     align-items: center;
     justify-content: center;
-    gap: 0.5rem; /* gap-2 */
+    gap: 0.5rem;
+    border-radius: 0.25rem;
+  }
 
-    /* Colors & Borders */
+  :global(.delete-btn:hover) {
     background-color: rgba(239, 68, 68, 0.1); /* bg-red-500/10 */
     color: rgb(248, 113, 113); /* text-red-400 */
-    border: 1px solid rgba(239, 68, 68, 0.2); /* border-red-500/20 */
-    border-radius: 0.25rem; /* rounded */
-
-    /* Typography */
-    font-size: 0.75rem; /* text-xs */
-    font-weight: 700; /* font-bold */
-    transition: background-color 0.2s; /* Smooth hover transition */
+    border: 1px solid rgba(239, 68, 68, 0.2);
   }
 
-  /* Hover State */
-  .delete-btn:hover {
-    background-color: rgba(239, 68, 68, 0.2); /* hover:bg-red-500/20 */
-  }
+  :global(.layout-radio-pill .svar-radio-group) {
+        display: flex;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 99px;
+        padding: 2px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    :global(.layout-radio-pill .svar-radio-button) {
+        border-radius: 99px !important;
+        font-size: 11px !important;
+        padding: 4px 12px !important;
+        border: none !important;
+    }
 
-  :global(.close-btn:hover) {
-    color: #f87171 !important;
-    background: rgba(248, 113, 113, 0.1) !important;
-  }
+    :global(.layout-radio-pill .svar-radio-button--selected) {
+        background: #2dd4bf !important; /* Matches your Teal theme */
+        color: #0f171a !important;
+    }
 </style>

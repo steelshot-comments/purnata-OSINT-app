@@ -12,11 +12,15 @@ struct BasePayload {
 }
 
 #[derive(Serialize)]
-struct NodePayload {
+struct NodeCreateRequest {
     #[serde(flatten)]
-    pub base: BasePayload,
+    base: BasePayload,
+    nodes: Vec<InternalNodeData>,
+}
 
-    label: String,
+#[derive(Serialize)]
+struct InternalNodeData {
+    labels: Vec<String>, // Note: FastAPI uses "labels" (plural)
     properties: HashMap<String, String>,
 }
 
@@ -56,7 +60,7 @@ pub async fn fetch_graph(state: tauri::State<'_, AppState>) -> Result<String, St
 #[tauri::command]
 pub async fn add_node_to_graph(
     state: tauri::State<'_, AppState>,
-    label: String,
+    label: String, // Incoming from Svelte
     properties: HashMap<String, String>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
@@ -67,15 +71,17 @@ pub async fn add_node_to_graph(
         project_id: uuid!("550e8400-e29b-41d4-a716-446655440000"),
     };
 
-    // We wrap the data in a payload struct for clean serialization
-    let payload = NodePayload {
-        label,
-        properties,
+    // Construct the request matching the FastAPI NodeCreateRequest model
+    let payload = NodeCreateRequest {
         base,
+        nodes: vec![InternalNodeData {
+            labels: vec![label], // Put the single label into a list
+            properties,
+        }],
     };
 
     let response = client
-        .post(format!("{}/graph/node", state.mobile_neo4j_api))
+        .post(format!("{}/add-node", state.mobile_neo4j_api))
         .json(&payload)
         .send()
         .await
@@ -98,11 +104,21 @@ pub async fn delete_node_from_graph(
     id_value: String,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
+    
+    // 1. Build the full payload matching NodeDeleteRequest
+    let payload = serde_json::json!({
+        "user_id": "550e8400-e29b-41d4-a716-446655440000",
+        "graph_id": "550e8400-e29b-41d4-a716-446655440000",
+        "project_id": "550e8400-e29b-41d4-a716-446655440000",
+        "id": id_value
+    });
 
-    let url = format!("{}/delete-node/{}", state.mobile_neo4j_api, id_value);
+    
+    let url = format!("{}/delete-node", state.mobile_neo4j_api.trim_end_matches('/'));
 
     let response = client
         .delete(url)
+        .json(&payload)
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;

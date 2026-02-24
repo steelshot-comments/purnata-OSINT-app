@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { ArrowLeft, Plus } from "lucide-svelte";
-  import { graphState } from "$lib/graph/graph.svelte";
+  import { graph } from "$lib/graph/graph.svelte";
   import NodeCard from "$lib/components/NodeCard.svelte";
   import { fade } from "svelte/transition";
 
@@ -35,7 +35,6 @@
       for (const node of nodeQueue) {
         await invoke("add_node_to_graph", node);
       }
-      graphState.needsRefresh = true;
       history.back();
     } catch (error) {
       alert("Error adding nodes: " + error);

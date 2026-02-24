@@ -11,10 +11,8 @@
   // Svelte 5 Runes
   let isLoading = $state(true);
   let viewMode = $state<"graph" | "table">("graph");
-  let selectedNode = $state<any>(null);
 
   async function handleDelete(data: any) {
-    // 1. Safety check: if data is null, just exit
     if (!data) return;
 
     const confirmDelete = confirm(`Delete ${data.label || 'this node'}?`);
@@ -22,14 +20,15 @@
 
     try {
       await invoke("delete_node_from_graph", {
-        idValue: data.id, // Use the passed data id
+        idValue: data.id, 
       });
-      selectedNode = null;
+      
+      graph.clearSelection(); // Clear the global store
       await fetchGraphData();
     } catch (e) {
       console.error(e);
     }
-}
+  }
 
   let elements = $state<{ nodes: any[]; edges: any[] }>({
     nodes: [],
@@ -39,12 +38,8 @@
   let isSelectMode = $state(false);
   let cy: Core | null = null;
 
-  function updateSelectedNode(data: any) {
-    selectedNode = data;
-  }
-
   function closeInspector() {
-    selectedNode = null;
+    graph.selectedNode = null;
     cy?.$(":selected").unselect();
   }
 
@@ -82,6 +77,24 @@
     return;
   }
 
+  function zoomIn() {
+    if (!cy) return;
+    const currentZoom = cy.zoom();
+    cy.zoom({
+      level: currentZoom * 1.2,
+      renderedPosition: { x: container!.clientWidth / 2, y: container!.clientHeight / 2 },
+    });
+  }
+
+  function zoomOut() {
+    if (!cy) return;
+    const currentZoom = cy.zoom();
+    cy.zoom({
+      level: currentZoom / 1.2,
+      renderedPosition: { x: container!.clientWidth / 2, y: container!.clientHeight / 2 },
+    });
+  }
+
   async function fetchGraphData() {
     try {
       isLoading = true;
@@ -91,12 +104,12 @@
       const newElements = { nodes: [], edges: [] };
 
       graphData.nodes.forEach((node: any) => {
-        newElements.nodes.push({
+        newElements.nodes.push({  
           group: "nodes",
           data: {
             id: node.id,
             label: node.properties.name || node.labels[0] || node.id,
-            properties: node.properties,
+            properties: node.properties || {},
           },
           classes: node.labels.join(" "),
         });
@@ -179,14 +192,16 @@
     <Toolbar
       {onSearch}
       {isSelectMode}
-      {selectedNode}
+      selectedNode={graph.selectedNode}
       onToggleView={toggleView}
       onReset={resetGraph}
       onFit={fitGraph}
       onAddNode={addNode}
       onToggleSelect={toggleSelectMode}
       onChangeLayout={changeLayout}
-      onDelete={() => handleDelete(selectedNode)}
+      onDelete={() => handleDelete(graph.selectedNode)}
+      {zoomIn}
+      {zoomOut}
     />
   </div>
 

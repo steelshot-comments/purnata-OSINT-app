@@ -5,7 +5,6 @@
   import { X, Database, Trash2, Edit, Copy } from "lucide-svelte";
   import { invoke } from "@tauri-apps/api/core";
 
-  // Derive actions automatically whenever selectedNode changes
   let actions = $derived(
     graph.selectedNode ? graph.getActionsForNode(graph.selectedNode.primaryLabel) : []
   );
