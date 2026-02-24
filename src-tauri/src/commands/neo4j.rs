@@ -75,7 +75,7 @@ pub async fn add_node_to_graph(
     let payload = NodeCreateRequest {
         base,
         nodes: vec![InternalNodeData {
-            labels: vec![label], // Put the single label into a list
+            labels: vec![label],
             properties,
         }],
     };
@@ -101,16 +101,20 @@ pub async fn add_node_to_graph(
 #[tauri::command]
 pub async fn delete_node_from_graph(
     state: tauri::State<'_, AppState>,
-    id_value: String,
+    ids: Vec<String>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
+
+    // let uuid_list: Vec<Uuid> = ids
+    //     .iter()
+    //     .map(|id| Uuid::parse_str(id).map_err(|_| format!("Invalid UUID format: {}", id)))
+    //     .collect::<Result<Vec<Uuid>, String>>()?;
     
-    // 1. Build the full payload matching NodeDeleteRequest
     let payload = serde_json::json!({
         "user_id": "550e8400-e29b-41d4-a716-446655440000",
         "graph_id": "550e8400-e29b-41d4-a716-446655440000",
         "project_id": "550e8400-e29b-41d4-a716-446655440000",
-        "id": id_value
+        "ids": ids
     });
 
     
@@ -124,7 +128,7 @@ pub async fn delete_node_from_graph(
         .map_err(|e| format!("Request failed: {}", e))?;
 
     if response.status().is_success() {
-        Ok(format!("Node {} successfully deleted", id_value))
+        Ok(format!("{} nodes successfully deleted", ids.len()))
     } else {
         let status = response.status();
         let error_text = response

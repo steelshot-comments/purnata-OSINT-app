@@ -21,7 +21,7 @@ export function createCy(container: HTMLElement, elements: any): Core {
         selector: "node:selected",
         style: {
           "border-width": "4px",
-          "border-color": "#fbbf24", // Yellow glow for selection
+          "border-color": "#fbbf24", 
           "background-color": "#14b8a6"
         }
       },
@@ -47,15 +47,11 @@ export function createCy(container: HTMLElement, elements: any): Core {
 
 export function setSelectionMode(cy: Core | null, isSelectMode: boolean) {
   if (!cy) return;
-
   if (isSelectMode) {
-    // 1. Disable panning so dragging creates a selection box
     cy.userPanningEnabled(false); 
     cy.boxSelectionEnabled(true);
-    // Optionally change cursor
     cy.container()!.style.cursor = 'crosshair';
   } else {
-    // 2. Re-enable panning for normal navigation
     cy.userPanningEnabled(true);
     cy.container()!.style.cursor = 'default';
   }
@@ -65,10 +61,13 @@ class GraphState {
   nodes = $state<any[]>([]);
   edges = $state<any[]>([]);
   actionMap = $state<Record<string, any>>({});
-  selectedNode = $state<any>(null);
+  // Updated to handle multiple selections
+  selectedNodes = $state<any[]>([]);
   isLoading = $state(false);
 
-  // Computed elements for Cytoscape/Table
+  // Helper for single-node legacy components
+  selectedNode = $derived(this.selectedNodes.length > 0 ? this.selectedNodes[0] : null);
+
   elements = $derived({
     nodes: this.nodes.map(n => ({
       group: "nodes",
@@ -76,7 +75,7 @@ class GraphState {
         id: n.id,
         label: n.properties.name || n.labels[0] || n.id,
         properties: n.properties,
-        primaryLabel: n.labels[0] // Crucial for ActionMap lookup
+        primaryLabel: n.labels[0] 
       },
       classes: n.labels.join(" ")
     })),
@@ -96,20 +95,14 @@ class GraphState {
   async loadData() {
     this.isLoading = true;
     try {
-      // 1. Fetch Graph Data
       const rawGraph: string = await invoke("fetch_graph");
       const graphData = JSON.parse(rawGraph);
       this.nodes = graphData.nodes;
       this.edges = graphData.edges;
 
-      // 2. Fetch Action Map (Unwrap the .message property)
       const rawActions: string = await invoke("get_action_map");
       const actionResponse = JSON.parse(rawActions);
-
-      // This is the fix: assign the inner 'message' object to actionMap
       this.actionMap = actionResponse.message || {};
-
-      console.log("Action Map loaded:", this.actionMap);
     } catch (e) {
       console.error("Failed to load graph data:", e);
     } finally {
@@ -121,12 +114,8 @@ class GraphState {
     return this.actionMap[label] || [];
   }
 
-  selectNode(nodeData: any) {
-    this.selectedNode = nodeData;
-  }
-
   clearSelection() {
-    this.selectedNode = null;
+    this.selectedNodes = [];
   }
 }
 
